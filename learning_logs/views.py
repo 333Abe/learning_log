@@ -46,7 +46,9 @@ def new_topic(request):
 def new_entry(request, topic_id):
     """Add a new entry for a particular topic"""
     topic = Topic.objects.get(id=topic_id)
-    
+    # Make sure current user owns topic before allowing new entries
+    if topic.owner != request.user:
+        raise Http404
     if request.method != 'POST':
         # No data submitted; create a blank form
         form = EntryForm()
@@ -71,7 +73,6 @@ def edit_entry(request, entry_id):
     # Make sure current user owns topic before allowing edits
     if topic.owner != request.user:
         raise Http404
-
     if request.method != 'POST':
         # Initial request; pre-fill form with current entry
         form = EntryForm(instance=entry)
