@@ -4,6 +4,10 @@ from django.http import Http404
 from .models import Topic, Entry
 from .forms import TopicForm, EntryForm
 
+def check_topic_owner(request, topic):
+    if topic.owner != request.user:
+        raise Http404
+
 def index(request):
     """the home page for learning log"""
     return render(request, 'learning_logs/index.html')
@@ -20,8 +24,7 @@ def topic(request, topic_id):
     """Show a single topic and all its entries"""
     topic = Topic.objects.get(id=topic_id)
     # Make sure the topic belongs to the current user
-    if topic.owner != request.user:
-        raise Http404
+    check_topic_owner(request, topic)
     entries = topic.entry_set.order_by('-date_added')
     context = {'topic': topic, 'entries': entries}
     return render(request, 'learning_logs/topic.html', context)
@@ -49,8 +52,7 @@ def new_entry(request, topic_id):
     """Add a new entry for a particular topic"""
     topic = Topic.objects.get(id=topic_id)
     # Make sure current user owns topic before allowing new entries
-    if topic.owner != request.user:
-        raise Http404
+    check_topic_owner(request, topic)
     if request.method != 'POST':
         # No data submitted; create a blank form
         form = EntryForm()
@@ -73,8 +75,7 @@ def edit_entry(request, entry_id):
     entry = Entry.objects.get(id=entry_id)
     topic = entry.topic
     # Make sure current user owns topic before allowing edits
-    if topic.owner != request.user:
-        raise Http404
+    check_topic_owner(request, topic)
     if request.method != 'POST':
         # Initial request; pre-fill form with current entry
         form = EntryForm(instance=entry)
